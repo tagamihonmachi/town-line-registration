@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>利用者登録</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>利用者登録</h1>
+  </header>
+
+  <main class="main">
+    <p id="preview-banner" class="banner" hidden>プレビュー表示です。この画面からは送信されません。</p>
+    <p id="loading" class="status">読み込み中です…</p>
+    <p id="fatal" class="status status-error" role="alert" hidden></p>
+
+    <form id="form" novalidate hidden>
+      <p class="lead">3つの項目を選んで、いちばん下の「登録する」を押してください。あとから変更もできます。</p>
+
+      <fieldset class="field" id="field-age">
+        <legend>1. 年代 <span class="tag tag-required">必須</span></legend>
+        <div class="choices choices-2col">
+          <label class="choice"><input type="radio" name="age" value="20代以下"><span>20代以下</span></label>
+          <label class="choice"><input type="radio" name="age" value="30代"><span>30代</span></label>
+          <label class="choice"><input type="radio" name="age" value="40代"><span>40代</span></label>
+          <label class="choice"><input type="radio" name="age" value="50代"><span>50代</span></label>
+          <label class="choice"><input type="radio" name="age" value="60代"><span>60代</span></label>
+          <label class="choice"><input type="radio" name="age" value="70代以上"><span>70代以上</span></label>
+        </div>
+        <p class="field-error" id="error-age" hidden></p>
+      </fieldset>
+
+      <fieldset class="field" id="field-han">
+        <legend>2. 班 <span class="tag tag-required">必須</span></legend>
+        <!-- 選択肢は config.js の HAN_OPTIONS から作られます -->
+        <div class="choices choices-2col" id="han-choices"></div>
+        <p class="field-error" id="error-han" hidden></p>
+      </fieldset>
+
+      <fieldset class="field" id="field-household">
+        <legend>3. 世帯属性 <span class="tag">いくつでも</span></legend>
+        <p class="hint">あてはまるものをすべて選んでください。なければ選ばなくてかまいません。</p>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" name="household" value="preschool"><span>未就学児がいる</span></label>
+          <label class="choice"><input type="checkbox" name="household" value="elementary"><span>小学生がいる</span></label>
+          <label class="choice"><input type="checkbox" name="household" value="juniorHigh"><span>中学生がいる</span></label>
+          <label class="choice"><input type="checkbox" name="household" value="senior"><span>65歳以上の方がいる</span></label>
+        </div>
+      </fieldset>
+
+
+      <div class="submit-bar">
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="submit" class="button">登録する</button>
+      </div>
+    </form>
+
+    <section id="done" class="done" hidden>
+      <p class="done-mark" aria-hidden="true">✓</p>
+      <h2 id="done-title" tabindex="-1">登録ありがとうございました</h2>
+      <p id="done-note" class="done-note"></p>
+      <button type="button" id="close" class="button">閉じる</button>
+    </section>
+  </main>
+
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
