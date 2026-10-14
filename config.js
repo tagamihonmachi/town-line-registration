@@ -6,7 +6,7 @@ window.APP_CONFIG = {
   LIFF_ID: '0000000000-xxxxxxxx',
 
   // Google Apps Script ウェブアプリのURL(末尾が /exec のもの)
-  GAS_URL: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXXXXX/exec',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbxzcnzChYM8BRY2E4I_8hP4WDJPkeWpN3s16mPNXWr8JDGbnztETjRwHnQqE8_e0Rc/exec',
 
   // 「班」の選択肢。増減・名称変更はここを書き換えるだけで反映されます(各20文字以内)。
   HAN_OPTIONS: ['1班', '2班', '3班', '4班', '5班', '6班', '7班', '8班', '9班', '10班', '11班', '12班', '13班'],
