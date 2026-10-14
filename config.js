@@ -3,7 +3,7 @@
 // Channel Secret やチャネルアクセストークンは絶対に書かないでください。
 window.APP_CONFIG = {
   // LIFFアプリのID(LINE Developers > LINE Loginチャネル > LIFF)
-  LIFF_ID: '0000000000-xxxxxxxx',
+  LIFF_ID: '2011914523-4VYvcjek',
 
   // Google Apps Script ウェブアプリのURL(末尾が /exec のもの)
   GAS_URL: 'https://script.google.com/macros/s/AKfycbxzcnzChYM8BRY2E4I_8hP4WDJPkeWpN3s16mPNXWr8JDGbnztETjRwHnQqE8_e0Rc/exec',
