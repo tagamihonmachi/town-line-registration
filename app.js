@@ -110,9 +110,9 @@
     return false;
   }
 
-  async function postToServer(payload) {
+  async function postToServer(payload, timeoutMs) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), timeoutMs || REQUEST_TIMEOUT_MS);
     try {
       // text/plain で送るとプリフライトが発生せず、Apps Script がそのまま受け取れる
       const res = await fetch(config.GAS_URL, {
@@ -180,6 +180,29 @@
     }
   }
 
+  function check(name, value) {
+    const input = Array.from(form.elements[name] instanceof RadioNodeList ? form.elements[name] : [form.elements[name]])
+      .find((element) => element && element.value === value);
+    if (input) input.checked = true;
+    return Boolean(input);
+  }
+
+  // 登録済みの人には、前回の内容を選んだ状態で表示する。取得できなくても、空のフォームでそのまま使える。
+  async function loadRegistration() {
+    $('loading').textContent = '登録内容を確認しています…';
+    try {
+      const result = await postToServer({ action: 'get', idToken: liff.getIDToken() }, 15000);
+      const saved = result && result.ok && result.registration;
+      if (!saved) return;
+      check('age', saved.age);
+      check('han', saved.han);
+      (saved.household || []).forEach((value) => check('household', value));
+      $('lead').textContent = '前回の登録内容を表示しています。変更したい項目を選び直して、いちばん下の「登録する」を押してください。';
+    } catch (err) {
+      // 前回の内容が表示できないだけなので、何もしない
+    }
+  }
+
   async function main() {
     if (!renderHanOptions()) {
       showFatal('設定に問題があります(班の選択肢がありません)。管理者にお知らせください。');
@@ -191,6 +214,7 @@
     } else {
       try {
         if (!(await initLiff())) return;
+        await loadRegistration();
       } catch (err) {
         showFatal('画面を開けませんでした。LINEアプリからもう一度開いてください。');
         return;

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>町会LINE 配信管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f2ed;
+      --surface: #ffffff;
+      --text: #2b2620;
+      --text-sub: #5f574c;
+      --line: #c9c3b8;
+      --accent: #66502c;
+      --accent-soft: #f1ebdf;
+      --danger: #b3261e;
+      --danger-soft: #fdeceb;
+      --ok: #1f6b3a;
+      --ok-soft: #e8f3ec;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 17px; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      line-height: 1.6;
+    }
+    [hidden] { display: none !important; }
+
+    .header { background: var(--accent); color: #fff; padding: 14px 16px; }
+    .header h1 { margin: 0; font-size: 1.2rem; text-align: center; letter-spacing: 0.05em; }
+    .main { max-width: 720px; margin: 0 auto; padding: 16px 16px 48px; }
+
+    .card { margin: 0 0 16px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .card h2 { margin: 0 0 4px; font-size: 1.15rem; }
+    .note { margin: 0 0 12px; color: var(--text-sub); font-size: 0.88rem; }
+
+    .group { min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
+    .group legend { padding: 0; margin: 0 0 8px; font-weight: 700; }
+    .group legend small { margin-left: 6px; color: var(--text-sub); font-weight: 400; font-size: 0.8rem; }
+    .choices { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+    .choice {
+      display: flex; align-items: center; gap: 10px;
+      min-height: 48px; padding: 8px 12px;
+      border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .choice input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+    .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+    .choice:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    .button {
+      display: block; width: 100%; min-height: 54px; padding: 8px 16px;
+      border: 2px solid var(--accent); border-radius: 10px;
+      background: var(--accent); color: #fff;
+      font: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+    }
+    .button-outline { background: var(--surface); color: var(--accent); }
+    .button-danger { border-color: var(--danger); background: var(--danger); }
+    .button-plain { border-color: var(--line); background: var(--surface); color: var(--text); }
+    .button:disabled { border-color: #b5ada1; background: #b5ada1; color: #fff; cursor: default; }
+    .button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+    .actions { margin-top: 16px; }
+
+    .count { margin: 12px 0 0; padding: 12px; border-radius: 10px; background: var(--accent-soft); }
+    .count strong { display: block; font-size: 1.5rem; }
+    .count > span { color: var(--text-sub); font-size: 0.88rem; }
+
+    .message { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; font-weight: 700; white-space: pre-wrap; }
+    .message-ok { background: var(--ok-soft); color: var(--ok); }
+    .message-error { background: var(--danger-soft); color: var(--danger); }
+    .message-info { background: var(--bg); color: var(--text-sub); font-weight: 400; }
+
+    textarea {
+      display: block; width: 100%; min-height: 9em; padding: 12px;
+      border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+      font: inherit; line-height: 1.6; resize: vertical;
+    }
+    textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+    .counter { margin: 4px 0 0; color: var(--text-sub); font-size: 0.8rem; text-align: right; }
+    .counter.over { color: var(--danger); font-weight: 700; }
+
+    .field-label { display: block; margin: 16px 0 6px; font-weight: 700; }
+    .field-label small { margin-left: 6px; color: var(--text-sub); font-weight: 400; font-size: 0.8rem; }
+    .image-actions .button { min-height: 48px; font-size: 1rem; }
+    .image-list { display: grid; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
+    .image-item {
+      display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: center;
+      padding: 8px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+    }
+    .image-thumb {
+      display: flex; align-items: center; justify-content: center;
+      width: 88px; height: 88px; overflow: hidden; border-radius: 8px; background: var(--bg);
+      color: var(--text-sub); font-size: 0.75rem; text-align: center;
+    }
+    .image-thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .image-item strong { display: block; }
+    .image-item .state { display: block; color: var(--text-sub); font-size: 0.8rem; }
+    .image-item .item-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .image-item .item-actions .button { min-height: 40px; padding: 4px 8px; font-size: 0.9rem; }
+
+    /* LINEで届く順(画像1 → 画像2 → … → 本文)のプレビュー */
+    .chat { display: grid; gap: 8px; justify-items: start; padding: 12px; border-radius: 10px; background: #8fa3bf; }
+    .chat-images { display: grid; gap: 8px; justify-items: start; }
+    .chat figure, .confirm-images figure { position: relative; margin: 0; }
+    .chat img { display: block; max-width: min(100%, 240px); max-height: 240px; border-radius: 12px; background: #fff; }
+    .order-badge {
+      position: absolute; top: 6px; left: 6px; padding: 0 8px; border-radius: 10px;
+      background: rgba(0, 0, 0, 0.65); color: #fff; font-size: 0.75rem; font-weight: 700;
+    }
+    .chat .bubble {
+      max-width: 100%; padding: 8px 12px; border-radius: 14px; background: #fff;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .chat .empty { margin: 0; color: #fff; font-size: 0.88rem; }
+
+    .card-danger { border: 2px solid var(--danger); background: #fffafa; }
+    .card-danger h2 { color: var(--danger); }
+    .hint { margin: 8px 0 0; color: var(--text-sub); font-size: 0.88rem; }
+
+    .overlay {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; background: rgba(0, 0, 0, 0.55);
+    }
+    .dialog {
+      width: 100%; max-width: 520px; max-height: 100%; overflow: auto;
+      padding: 20px; border-radius: 14px; background: var(--surface);
+    }
+    .dialog h2 { margin: 0 0 12px; font-size: 1.15rem; color: var(--danger); }
+    .dialog dl { margin: 0; }
+    .dialog dt { margin-top: 12px; color: var(--text-sub); font-size: 0.85rem; font-weight: 700; }
+    .dialog dd { margin: 2px 0 0; }
+    .dialog .big { font-size: 1.5rem; font-weight: 700; }
+    .preview {
+      max-height: 14em; overflow: auto; margin: 0; padding: 10px 12px;
+      border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+      font: inherit; white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .confirm-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+    .confirm-images img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+    .dialog-actions { display: grid; gap: 10px; margin-top: 20px; }
+    @media (min-width: 480px) { .dialog-actions { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="header"><h1>町会LINE 配信管理</h1></header>
+
+  <main class="main">
+    <p id="loading" class="message message-info">読み込み中です…</p>
+    <p id="fatal" class="message message-error" role="alert" hidden></p>
+
+    <div id="app" hidden>
+      <section class="card">
+        <h2>配信対象</h2>
+        <p class="note">何も選ばなければ、登録者全員(<span id="registered">-</span>人)が対象です。同じ項目で複数選ぶと「どれかに当てはまる人」、別の項目も選ぶと「すべてに当てはまる人」になります。</p>
+
+        <fieldset class="group">
+          <legend>年代</legend>
+          <div class="choices" id="ages"></div>
+        </fieldset>
+        <fieldset class="group">
+          <legend>班</legend>
+          <div class="choices" id="hans"></div>
+        </fieldset>
+        <fieldset class="group">
+          <legend>世帯属性<small>選んだもののどれかがいる世帯</small></legend>
+          <div class="choices" id="household"></div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" class="button" id="check">対象人数を確認</button>
+        </div>
+        <div id="count" class="count" hidden>
+          <strong>対象人数：<span id="count-number"></span>人</strong>
+          <span id="count-summary"></span>
+        </div>
+        <p id="check-message" class="message" role="status" hidden></p>
+      </section>
+
+      <section class="card">
+        <h2>メッセージ</h2>
+        <p class="note">画像と本文のどちらか一方は必要です。画像1、画像2…、本文の順に届きます。</p>
+
+        <span class="field-label">画像<small>任意・最大4枚・JPEGまたはPNG</small></span>
+        <input type="file" id="image-file" accept="image/jpeg,image/png" multiple hidden>
+        <input type="file" id="image-replace-file" accept="image/jpeg,image/png" hidden>
+        <ol class="image-list" id="image-list"></ol>
+        <div class="image-actions">
+          <button type="button" class="button button-plain" id="image-pick">画像を選択</button>
+        </div>
+        <p id="image-message" class="message" role="status" hidden></p>
+
+        <label class="field-label" for="text">本文</label>
+        <textarea id="text" placeholder="ここに配信する文章を入力します"></textarea>
+        <p class="counter" id="counter"></p>
+
+        <span class="field-label">プレビュー<small>LINEに届く順</small></span>
+        <div class="chat">
+          <div id="chat-images" class="chat-images" hidden></div>
+          <div id="chat-text" class="bubble" hidden></div>
+          <p id="chat-empty" class="empty">画像か本文を入れると、ここに表示されます。</p>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="button button-outline" id="test">自分にテスト送信</button>
+        </div>
+        <p class="hint" id="test-hint">管理者のLINE 1件だけに送ります。配信対象の方には送られません。</p>
+        <p id="test-message" class="message" role="status" hidden></p>
+      </section>
+
+      <section class="card card-danger">
+        <h2>本番送信</h2>
+        <p class="note">配信対象の方全員のLINEに届きます。送信後は取り消せません。</p>
+        <button type="button" class="button button-danger" id="send">本番送信</button>
+        <p class="hint" id="send-hint"></p>
+        <p id="send-message" class="message" role="status" hidden></p>
+      </section>
+    </div>
+  </main>
+
+  <div id="confirm" class="overlay" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h2 id="confirm-title"></h2>
+      <dl>
+        <dt>対象人数</dt>
+        <dd class="big"><span id="confirm-count"></span>人</dd>
+        <dt>指定条件</dt>
+        <dd id="confirm-summary"></dd>
+        <dt>画像</dt>
+        <dd>
+          <div id="confirm-images" class="confirm-images" hidden></div>
+          <span id="confirm-image-none">なし</span>
+        </dd>
+        <dt>メッセージ本文</dt>
+        <dd>
+          <pre class="preview" id="confirm-text"></pre>
+          <span id="confirm-text-none">なし(画像のみ)</span>
+        </dd>
+      </dl>
+      <div class="dialog-actions">
+        <button type="button" class="button button-plain" id="confirm-cancel">キャンセル</button>
+        <button type="button" class="button button-danger" id="confirm-ok">送信する</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const $ = function (id) { return document.getElementById(id); };
+      const GROUPS = ['ages', 'hans', 'household'];
+
+      let options = null;
+      let busy = false;
+      // 「対象人数を確認」の結果。配信対象の条件を変えると null に戻り、再確認が必要になる。
+      let confirmed = null;
+      let pendingRequestId = null;
+      // 確認画面に表示した本文と画像。この内容をそのまま送信する。
+      let pendingContent = null;
+      // 選択中の画像。配列の順が、LINEに届く順になる。
+      // 各要素は { status: 'uploading' | 'ready', dataUrl, name, fileId }。dataUrl は変換が終わるまで空。
+      let images = [];
+      // 画像の保存に失敗したときなどの、画像欄に出すお知らせ
+      let imageNotices = [];
+      // 「選び直す」を押した画像
+      let replaceTarget = null;
+      const SOURCE_MAX_BYTES = 25 * 1024 * 1024;
+      const SOURCE_MAX_SIDE = 12000;
+
+      function call(name, argument) {
+        return new Promise(function (resolve, reject) {
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](argument);
+        });
+      }
+
+      function errorText(err) {
+        return (err && err.message) || '通信に失敗しました。もう一度お試しください。';
+      }
+
+      function showMessage(id, kind, text) {
+        const element = $(id);
+        element.className = 'message message-' + kind;
+        element.textContent = text;
+        element.hidden = !text;
+      }
+
+      function renderChoices(id, values) {
+        const container = $(id);
+        values.forEach(function (value) {
+          const label = document.createElement('label');
+          label.className = 'choice';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.name = id;
+          input.value = value;
+          const span = document.createElement('span');
+          span.textContent = value;
+          label.append(input, span);
+          container.append(label);
+        });
+      }
+
+      function readSelection() {
+        const selection = {};
+        GROUPS.forEach(function (id) {
+          selection[id] = Array.from(document.querySelectorAll('input[name="' + id + '"]:checked')).map(function (input) { return input.value; });
+        });
+        return selection;
+      }
+
+      function readText() {
+        return $('text').value;
+      }
+
+      function refresh() {
+        const text = readText();
+        const hasText = text.trim().length > 0;
+        const tooLong = text.length > options.maxLength;
+
+        $('counter').textContent = text.length + ' / ' + options.maxLength + '文字';
+        $('counter').classList.toggle('over', tooLong);
+
+        const uploading = images.some(function (item) { return item.status !== 'ready'; });
+        const hasImage = images.length > 0 && !uploading;
+        const hasContent = hasText || hasImage;
+
+        $('image-pick').textContent = images.length ? '画像を追加(' + images.length + ' / ' + options.image.maxCount + '枚)' : '画像を選択';
+        $('image-pick').disabled = busy || !options.image.ready;
+        document.querySelectorAll('#image-list button').forEach(function (button) { button.disabled = busy; });
+        $('chat-text').hidden = !hasText;
+        $('chat-text').textContent = text.replace(/\s+$/, '');
+        $('chat-empty').hidden = images.length > 0 || hasText;
+
+        $('check').disabled = busy;
+        $('test').disabled = busy || uploading || !hasContent || tooLong || !options.testReady || !options.sendReady;
+
+        let reason = '';
+        if (!options.sendReady) reason = 'チャネルアクセストークンが未設定のため、送信できません。';
+        else if (uploading) reason = '画像を保存しています。少しお待ちください。';
+        else if (!hasContent) reason = '本文か画像のどちらかを入れてください。';
+        else if (tooLong) reason = 'メッセージ本文が長すぎます。';
+        else if (!confirmed) reason = '先に「対象人数を確認」を押してください。';
+        else if (confirmed.count === 0) reason = '対象者が0人のため、送信できません。';
+        $('send').disabled = busy || Boolean(reason);
+        $('send-hint').textContent = reason;
+
+        if (!options.testReady) $('test-hint').textContent = '管理者のLINEユーザーID(ADMIN_LINE_USER_ID)が未設定のため、テスト送信できません。';
+      }
+
+      function setBusy(value) {
+        busy = value;
+        refresh();
+      }
+
+      // 本文や画像の変更では確認済みの状態を保つ。確認画面が開いていれば、古い内容のまま送らないよう閉じる。
+      function handleTextInput() {
+        if (!$('confirm').hidden && !busy) closeConfirm();
+        refresh();
+      }
+
+      // いま送信できる内容。画像は、全部の保存と確認が済んでいるときだけ含める。
+      function readContent() {
+        const ready = images.every(function (item) { return item.status === 'ready'; });
+        const list = ready ? images : [];
+        return {
+          text: readText(),
+          images: list.map(function (item) { return { fileId: item.fileId }; }),
+          dataUrls: list.map(function (item) { return item.dataUrl; }),
+        };
+      }
+
+      function numberedImage(dataUrl, index) {
+        const figure = document.createElement('figure');
+        const picture = document.createElement('img');
+        picture.src = dataUrl;
+        picture.alt = '画像' + (index + 1);
+        const badge = document.createElement('span');
+        badge.className = 'order-badge';
+        badge.textContent = '画像' + (index + 1);
+        figure.append(picture, badge);
+        return figure;
+      }
+
+      // 画像の一覧と、プレビューの画像部分を描き直す
+      function renderImages() {
+        const list = $('image-list');
+        const chat = $('chat-images');
+        list.textContent = '';
+        chat.textContent = '';
+        images.forEach(function (item, index) {
+          const row = document.createElement('li');
+          row.className = 'image-item';
+          const thumb = document.createElement('div');
+          thumb.className = 'image-thumb';
+          if (item.dataUrl) {
+            const picture = document.createElement('img');
+            picture.src = item.dataUrl;
+            picture.alt = '画像' + (index + 1);
+            thumb.append(picture);
+            chat.append(numberedImage(item.dataUrl, index));
+          } else {
+            thumb.textContent = '確認中…';
+          }
+          const body = document.createElement('div');
+          const title = document.createElement('strong');
+          title.textContent = '画像' + (index + 1);
+          const state = document.createElement('span');
+          state.className = 'state';
+          state.textContent = item.status === 'ready' ? '保存済み' : '保存しています…';
+          const actions = document.createElement('div');
+          actions.className = 'item-actions';
+          const replace = document.createElement('button');
+          replace.type = 'button';
+          replace.className = 'button button-plain';
+          replace.textContent = '選び直す';
+          replace.addEventListener('click', function () { handleImageReplace(item); });
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'button button-plain';
+          remove.textContent = '削除';
+          remove.addEventListener('click', function () { handleImageRemove(item); });
+          actions.append(replace, remove);
+          body.append(title, state, actions);
+          row.append(thumb, body);
+          list.append(row);
+        });
+        chat.hidden = chat.children.length === 0;
+      }
+
+      function showImageStatus() {
+        const waiting = images.filter(function (item) { return item.status !== 'ready'; }).length;
+        const lines = imageNotices.slice();
+        if (waiting) lines.push('画像を保存しています…(残り' + waiting + '枚)');
+        else if (images.length && !lines.length) lines.push('画像' + images.length + '枚を保存し、LINEから取得できることを確認しました。');
+        showMessage('image-message', imageNotices.length ? 'error' : (waiting ? 'info' : 'ok'), lines.join('\n'));
+      }
+
+      function imagesChanged() {
+        if (!$('confirm').hidden && !busy) closeConfirm();
+        renderImages();
+        showImageStatus();
+        refresh();
+      }
+
+      function readHead(file) {
+        return new Promise(function (resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function () { resolve(new Uint8Array(reader.result)); };
+          reader.onerror = function () { reject(new Error('画像を読み込めませんでした。')); };
+          reader.readAsArrayBuffer(file.slice(0, 8));
+        });
+      }
+
+      function loadImage(file) {
+        return new Promise(function (resolve, reject) {
+          const url = URL.createObjectURL(file);
+          const element = new Image();
+          element.onload = function () { URL.revokeObjectURL(url); resolve(element); };
+          element.onerror = function () { URL.revokeObjectURL(url); reject(new Error('画像を読み込めませんでした。別の画像でお試しください。')); };
+          element.src = url;
+        });
+      }
+
+      // 長辺を maxSide 以下に縮めたJPEGにする。撮影場所などの付加情報はここで除かれる。
+      function toJpeg(element, maxSide, quality) {
+        const scale = Math.min(1, maxSide / Math.max(element.naturalWidth, element.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(element.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(element.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(element, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', quality);
+      }
+
+      async function prepareImage(file) {
+        const isJpeg = file.type === 'image/jpeg' && /\.jpe?g$/i.test(file.name);
+        const isPng = file.type === 'image/png' && /\.png$/i.test(file.name);
+        if (!isJpeg && !isPng) throw new Error('JPEGまたはPNGの画像だけを使えます。');
+        if (file.size > SOURCE_MAX_BYTES) throw new Error('画像のファイルサイズが大きすぎます(25MBまで)。');
+
+        // 拡張子や種類の表示だけでなく、ファイルの中身の先頭でも形式を確かめる
+        const head = await readHead(file);
+        const looksJpeg = head[0] === 0xff && head[1] === 0xd8;
+        const looksPng = head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47;
+        if ((isJpeg && !looksJpeg) || (isPng && !looksPng)) throw new Error('画像ファイルの中身が、JPEGまたはPNGではありません。');
+
+        const element = await loadImage(file);
+        if (Math.max(element.naturalWidth, element.naturalHeight) > SOURCE_MAX_SIDE) {
+          throw new Error('画像が大きすぎます(縦横 ' + SOURCE_MAX_SIDE + 'px まで)。');
+        }
+        let dataUrl = toJpeg(element, options.image.maxSide, 0.85);
+        if (dataUrl.length * 0.75 > options.image.maxBytes) dataUrl = toJpeg(element, options.image.maxSide, 0.6);
+        if (dataUrl.length * 0.75 > options.image.maxBytes) throw new Error('画像のファイルサイズが大きすぎます。');
+        return dataUrl;
+      }
+
+      // 1枚を変換してドライブに保存する。失敗した画像は一覧から外し、理由を表示する。
+      async function processImage(item, file) {
+        const alive = function () { return images.indexOf(item) !== -1; };
+        try {
+          const dataUrl = await prepareImage(file);
+          if (!alive()) return;
+          item.dataUrl = dataUrl;
+          imagesChanged();
+          const result = await call('adminUploadImage', { base64: dataUrl.split(',')[1], name: file.name });
+          if (!alive()) return;
+          item.status = 'ready';
+          item.name = result.name;
+          item.fileId = result.fileId;
+        } catch (err) {
+          if (!alive()) return;
+          images = images.filter(function (other) { return other !== item; });
+          imageNotices.push('「' + file.name + '」は追加できませんでした。' + errorText(err));
+        }
+        imagesChanged();
+      }
+
+      // 画像を末尾に追加する。上限を超える分は追加しない。
+      function handleImageAdd(files) {
+        if (busy || files.length === 0) return;
+        imageNotices = [];
+        const room = options.image.maxCount - images.length;
+        if (files.length > room) imageNotices.push('画像は最大' + options.image.maxCount + '枚までです。' + (room > 0 ? (files.length - room) + '枚は追加していません。' : ''));
+        files.slice(0, Math.max(0, room)).forEach(function (file) {
+          const item = { status: 'uploading', dataUrl: '', name: file.name, fileId: '' };
+          images.push(item);
+          processImage(item, file);
+        });
+        imagesChanged();
+      }
+
+      function handleImagePick() {
+        if (busy) return;
+        if (images.length >= options.image.maxCount) {
+          imageNotices = ['画像は最大' + options.image.maxCount + '枚までです。'];
+          showImageStatus();
+          return;
+        }
+        $('image-file').click();
+      }
+
+      // 同じ位置のまま、別の画像に入れ替える
+      function handleImageReplace(item) {
+        if (busy) return;
+        replaceTarget = item;
+        $('image-replace-file').click();
+      }
+
+      function handleImageReplaceFile(file) {
+        const index = images.indexOf(replaceTarget);
+        replaceTarget = null;
+        if (busy || !file || index === -1) return;
+        imageNotices = [];
+        const item = { status: 'uploading', dataUrl: '', name: file.name, fileId: '' };
+        images[index] = item;
+        processImage(item, file);
+        imagesChanged();
+      }
+
+      function handleImageRemove(item) {
+        if (busy) return;
+        imageNotices = [];
+        images = images.filter(function (other) { return other !== item; });
+        imagesChanged();
+      }
+
+      // 配信対象の条件が変わったら、確認済みの状態を取り消す
+      function invalidate() {
+        if (confirmed) {
+          confirmed = null;
+          $('count').hidden = true;
+          showMessage('check-message', 'info', '条件を変更しました。もう一度「対象人数を確認」を押してください。');
+          if (!$('confirm').hidden && !busy) closeConfirm();
+        }
+        refresh();
+      }
+
+      async function handleCheck() {
+        if (busy) return;
+        confirmed = null;
+        $('count').hidden = true;
+        showMessage('check-message', 'info', '確認中です…');
+        setBusy(true);
+        const selection = readSelection();
+        try {
+          const result = await call('adminCountTargets', selection);
+          // 確認中に条件が変わっていたら、確認済みにしない
+          if (JSON.stringify(readSelection()) !== JSON.stringify(selection)) {
+            showMessage('check-message', 'info', '条件を変更しました。もう一度「対象人数を確認」を押してください。');
+          } else {
+            confirmed = { selection: selection, count: result.count, summary: result.summary };
+            $('count-number').textContent = result.count;
+            $('count-summary').textContent = '条件：' + result.summary;
+            $('count').hidden = false;
+            showMessage('check-message', 'info', '');
+          }
+        } catch (err) {
+          showMessage('check-message', 'error', errorText(err));
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function handleTest() {
+        if (busy) return;
+        showMessage('test-message', 'info', 'テスト送信中です…');
+        setBusy(true);
+        try {
+          const content = readContent();
+          const result = await call('adminSendTest', { text: content.text, images: content.images });
+          showMessage('test-message', result.ok ? 'ok' : 'error', result.ok ? '自分のLINEにテスト送信しました。' : result.message);
+        } catch (err) {
+          showMessage('test-message', 'error', errorText(err));
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function newRequestId() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        return 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+      }
+
+      function openConfirm() {
+        const content = readContent();
+        if (images.some(function (item) { return item.status !== 'ready'; })) return;
+        if (busy || !confirmed || confirmed.count === 0 || (!content.text.trim() && content.images.length === 0)) return;
+        pendingRequestId = newRequestId();
+        pendingContent = content;
+        $('confirm-title').textContent = '対象' + confirmed.count + '人に以下の内容を送信します。本当に送信しますか？';
+        $('confirm-count').textContent = confirmed.count;
+        $('confirm-summary').textContent = confirmed.summary;
+        $('confirm-images').textContent = '';
+        content.dataUrls.forEach(function (dataUrl, index) { $('confirm-images').append(numberedImage(dataUrl, index)); });
+        $('confirm-images').hidden = content.images.length === 0;
+        $('confirm-image-none').hidden = content.images.length > 0;
+        $('confirm-text').hidden = !content.text.trim();
+        $('confirm-text').textContent = content.text.replace(/\s+$/, '');
+        $('confirm-text-none').hidden = Boolean(content.text.trim());
+        $('confirm-ok').disabled = false;
+        $('confirm-ok').textContent = '送信する';
+        $('confirm-cancel').disabled = false;
+        $('confirm').hidden = false;
+        $('confirm-cancel').focus();
+      }
+
+      function closeConfirm() {
+        $('confirm').hidden = true;
+        pendingRequestId = null;
+        $('send').focus();
+      }
+
+      async function handleSend() {
+        if (busy || !confirmed || !pendingRequestId || !pendingContent) return;
+        const request = {
+          selection: confirmed.selection,
+          text: pendingContent.text,
+          images: pendingContent.images,
+          expectedCount: confirmed.count,
+          requestId: pendingRequestId,
+        };
+        $('confirm-ok').disabled = true;
+        $('confirm-ok').textContent = '送信中です…';
+        $('confirm-cancel').disabled = true;
+        showMessage('send-message', 'info', '');
+        setBusy(true);
+        try {
+          const result = await call('adminSend', request);
+          showMessage('send-message', result.ok ? 'ok' : 'error', result.message);
+        } catch (err) {
+          showMessage('send-message', 'error', errorText(err));
+        } finally {
+          // 続けて同じ内容を送ってしまわないよう、送信後は毎回、対象人数の確認からやり直す
+          confirmed = null;
+          $('count').hidden = true;
+          showMessage('check-message', 'info', '');
+          closeConfirm();
+          setBusy(false);
+        }
+      }
+
+      async function main() {
+        try {
+          options = await call('adminGetOptions');
+        } catch (err) {
+          $('loading').hidden = true;
+          showMessage('fatal', 'error', errorText(err));
+          return;
+        }
+        renderChoices('ages', options.ages);
+        renderChoices('hans', options.hans);
+        renderChoices('household', options.household);
+        $('registered').textContent = options.registered;
+
+        GROUPS.forEach(function (id) { $(id).addEventListener('change', invalidate); });
+        $('text').addEventListener('input', handleTextInput);
+        $('image-pick').addEventListener('click', handleImagePick);
+        $('image-file').addEventListener('change', function () {
+          const files = Array.from($('image-file').files);
+          $('image-file').value = '';
+          handleImageAdd(files);
+        });
+        $('image-replace-file').addEventListener('change', function () {
+          const file = $('image-replace-file').files[0];
+          $('image-replace-file').value = '';
+          handleImageReplaceFile(file);
+        });
+        if (!options.image.ready) showMessage('image-message', 'info', '画像の保存先(LINE_IMAGE_FOLDER_ID)が未設定のため、画像は使えません。');
+        $('check').addEventListener('click', handleCheck);
+        $('test').addEventListener('click', handleTest);
+        $('send').addEventListener('click', openConfirm);
+        $('confirm-cancel').addEventListener('click', function () { if (!busy) closeConfirm(); });
+        $('confirm-ok').addEventListener('click', handleSend);
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && !$('confirm').hidden && !busy) closeConfirm();
+        });
+
+        refresh();
+        $('loading').hidden = true;
+        $('app').hidden = false;
+      }
+
+      main();
+    })();
+  </script>
+</body>
+</html>
